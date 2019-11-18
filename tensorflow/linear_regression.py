@@ -16,7 +16,14 @@ hypothesis = X * W + b
 
 cost = tf.reduce_mean(tf.square(hypothesis - Y))
 train = tf.train.GradientDescentOptimizer(learning_rate=0.1).minimize(cost)
-
+'''
+GradientDescentOptimizer(learning_rate=0.1).minimize(cost)
+==
+learning_rate = 0.1
+gradient = tf.reduce_mean((W * X - Y) * X)
+descent = W - learning_rate * gradient
+update = W.assign(descent)
+'''
 
 with tf.Session() as sess:
 
@@ -64,10 +71,10 @@ with tf.Session() as sess:
     train = tf.train.GradientDescentOptimizer(learning_rate=0.01).minimize(cost)
 
     for step in range(1001):
-        _, cost_val, W_val, b_val = sess.run([train, cost, W, b], feed_dict={X: [1, 2, 3, 4, 5], Y: [2, 5, 8, 11, 14]})
+        _, cost_val, hypothesis_val = sess.run([train, cost, hypothesis], feed_dict={X: [1, 2, 3, 4, 5], Y: [2, 5, 8, 11, 14]})
 
         if step % 100 == 0:
-            print(step, cost_val, W_val, b_val)
+            print(step, cost_val, hypothesis_val)
 
     print(sess.run(hypothesis, feed_dict={X: [5]}))
     print(sess.run(hypothesis, feed_dict={X: [2.5]}))
