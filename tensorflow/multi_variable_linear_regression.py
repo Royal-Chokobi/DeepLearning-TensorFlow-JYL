@@ -51,3 +51,21 @@ with tf.Session() as sess:
             print(step, "Cost: ", cost_val, "\nw_val: \n", w_val, "\nb_bal: ", b_bal, "\nPrediction:\n", hy_val)
 
     print(sess.run(hypothesis, feed_dict={X1: [[96., 98., 55., 110., 60.]]}))
+
+    '''
+    0 Cost:  14438.745 
+w_val: 
+ [[ 2.007885  ]
+ [-0.93735844]
+ [ 0.12405917]
+ [ 0.21736704]
+ [ 0.63795036]] 
+b_bal:  [-0.8228112] 
+Prediction:
+ [[266.9636 ]
+ [299.08875]
+ [298.83453]
+ [340.02777]
+ [307.5128 ]
+ [256.45023]]
+    '''
