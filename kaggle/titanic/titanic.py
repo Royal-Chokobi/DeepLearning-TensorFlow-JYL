@@ -221,11 +221,6 @@ json_string = model.to_json()
 print(json_string)
 
 
-# 가중치를 텐서플로의 체크포인트 파일로 저장합니다.
-# model.save_weights('./weights/my_model')
-# 모델의 상태를 복원합니다.
-# 모델의 구조가 동일해야 합니다.
-# model.load_weights('./weights/my_model')
 # 가중치를 HDF5 파일로 저장합니다.
 # model.save_weights('my_titanic_model.h5', save_format='h5')
 # 모델의 상태를 복원합니다.

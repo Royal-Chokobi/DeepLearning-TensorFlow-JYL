@@ -72,37 +72,74 @@ mid_prices = (high_prices + low_prices) / 2
 print(finance_data.dtypes)
 print(finance_data.head())
 
-plt.plot(finance_data['Adj_Close'].values)
-plt.plot(finance_data['High'].values)
-plt.plot(finance_data['Low'].values)
-plt.show()
-
-y_data = finance_data.pop('Adj_Close')
-tr_data = finance_data
+# plt.plot(finance_data['Adj_Close'].values)
+# plt.plot(finance_data['High'].values)
+# plt.plot(finance_data['Low'].values)
+# plt.show()
 
 
-dataset = tf.data.Dataset.from_tensor_slices((tr_data.values, y_data.values))
-train_ds = dataset.shuffle(len(finance_data)).batch(50)
-def get_compiled_model():
-
-    # model = tf.keras.Sequential()
-    # model.add(tf.keras.layers.Dense(10, activation='relu'))
-    # model.add(tf.keras.layers.Dense(10, activation='relu'))
-    # model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
-    model = tf.keras.Sequential([
-        tf.keras.layers.Dense(10, activation='relu'),
-        tf.keras.layers.Dense(10, activation='relu'),
-        tf.keras.layers.Dense(1, activation='sigmoid')
-    ])
-
-    model.compile(optimizer='adam',
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
-    return model
+# Standardization
+def data_standardization(x):
+    x_np = np.asarray(x)
+    return (x_np - x_np.mean()) / x_np.std()
 
 
-model = get_compiled_model()
-model.fit(train_ds, epochs=100)
+# Min-Max scaling
+def min_max_scaling(x):
+    x_np = np.asarray(x)
+    return (x_np - x_np.min()) / (x_np.max() - x_np.min() + 1e-7) # 1e-7은 0으로 나누는 오류 예방차원
+
+
+def reverse_min_max_scaling(org_x, x):
+    org_x_np = np.asarray(org_x)
+    x_np = np.asarray(x)
+    return (x_np * (org_x_np.max() - org_x_np.min() + 1e-7)) + org_x_np.min()
+
+
+fn_date = finance_data.pop('Date')
+# fn_volume = finance_data.pop('Volume')
+
+finance_price = min_max_scaling(finance_data)
+finance_date = min_max_scaling(fn_date)
+
+
+print(finance_price)
+# print(finance_price[:, [-2]])
+print(finance_date)
+# x = np.concatenate((np.array(finance_price), np.array(finance_date)), axis=1) # axis=1, 세로로 합친다
+
+# norm_price = min_max_scaling(price)
+#
+# print("price.shape: ", price.shape)
+# print("price[0]: ", price[0])
+# print("norm_price[0]: ", norm_price[0])
+# print("="*100) # 화면상 구분용
+
+# y_data = finance_data.pop('Adj_Close')
+# tr_data = finance_data
+
+# dataset = tf.data.Dataset.from_tensor_slices((tr_data.values, y_data.values))
+# train_ds = dataset.shuffle(len(finance_data)).batch(50)
+# def get_compiled_model():
+#
+#     # model = tf.keras.Sequential()
+#     # model.add(tf.keras.layers.Dense(10, activation='relu'))
+#     # model.add(tf.keras.layers.Dense(10, activation='relu'))
+#     # model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+#     model = tf.keras.Sequential([
+#         tf.keras.layers.Dense(10, activation='relu'),
+#         tf.keras.layers.Dense(10, activation='relu'),
+#         tf.keras.layers.Dense(1, activation='sigmoid')
+#     ])
+#
+#     model.compile(optimizer='adam',
+#                   loss='binary_crossentropy',
+#                   metrics=['accuracy'])
+#     return model
+#
+#
+# model = get_compiled_model()
+# model.fit(train_ds, epochs=100)
 #
 # def get_compiled_model():
 #
