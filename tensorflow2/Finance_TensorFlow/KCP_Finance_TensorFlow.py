@@ -91,7 +91,7 @@ print("="*200)
 BATCH_SIZE = 100
 BUFFER_SIZE = 1000
 EVALUATION_INTERVAL = 200
-EPOCHS = 1
+EPOCHS = 100
 
 finance_df.plot(subplots=True)
 plt.show()
