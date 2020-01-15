@@ -86,17 +86,20 @@ finance_df = finance_data
 finance_df.index = fin_real_date
 print(finance_df.head())
 
+finance_df.plot(subplots=True)
+plt.show()
+
 print("="*200)
 
 BATCH_SIZE = 100
 BUFFER_SIZE = 1000
 EVALUATION_INTERVAL = 200
 EPOCHS = 100
-
-finance_df.plot(subplots=True)
-plt.show()
-
+history_size = 20
+target_size = 1
+STEP = 1
 TRAIN_SPLIT = 3000
+
 dataset = finance_df.values
 data_mean = dataset.mean(axis=0)
 data_std = dataset.std(axis=0)
@@ -104,10 +107,6 @@ dataset = (dataset-data_mean)/data_std
 
 print(dataset)
 print("="*200)
-
-history_size = 20
-target_size = 1
-STEP = 1
 
 x_train_multi, y_train_multi = multivariate_data(dataset, dataset[:, 0], 0,
                                                  TRAIN_SPLIT, history_size,
