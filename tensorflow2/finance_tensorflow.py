@@ -105,20 +105,24 @@ wonUpDown_data.plot(subplots=True)
 plt.show()
 
 
-finance_data.pop('realDate')
+fin_real_date = finance_data.pop('realDate')
 
 data_len = len(finance_data)
 fn_date = finance_data.pop('Date')
 fn_volume = finance_data.pop('Volume')
-fn_Adj_Won = finance_data.pop('Adj_Won')
+# fn_Adj_Won = finance_data.pop('Adj_Won')
 
 finance_price = min_max_scaling(finance_data)
-finance_date = min_max_scaling(fn_date).reshape(data_len, 1)
+# finance_date = min_max_scaling(fn_date).reshape(data_len, 1)
 finance_volume = min_max_scaling(fn_volume).reshape(data_len, 1)
-finance_Adj_Won = min_max_scaling(fn_Adj_Won).reshape(data_len, 1)
+# finance_Adj_Won = min_max_scaling(fn_Adj_Won).reshape(data_len, 1)
 
-x = np.concatenate([finance_price, finance_date, finance_volume, finance_Adj_Won], axis=1)
-print(x.shape)
+x = np.concatenate([finance_price, finance_volume], axis=1)
+# x.index = fin_real_date
+
+features_columns = ['Adj_Close', 'Adj_Won', 'Open', 'High', 'Low', 'Volume']
+finance_df = pd.DataFrame(x, columns=features_columns, index=fin_real_date)
+print(finance_df.head())
 
 y_data = finance_price[:, [0]]
 
@@ -150,7 +154,7 @@ print(train_ds)
 
 print("="*200)
 
-TRAIN_SPLIT = 4000
+TRAIN_SPLIT = 1000
 uni_train_mean = uni_data[:TRAIN_SPLIT].mean()
 uni_train_std = uni_data[:TRAIN_SPLIT].std()
 uni_data = (uni_data-uni_train_mean)/uni_train_std
@@ -185,163 +189,210 @@ x_val_uni, y_val_uni = univariate_data(shape_uni_data, TRAIN_SPLIT, None,
                                        univariate_past_history,
                                        univariate_future_target)
 
-
-
+#
+#
 def create_time_steps(length):
     return list(range(-length, 0))
-
-
-def show_plot(plot_data, delta, title):
-    labels = ['History', 'True Future', 'Model Prediction']
-    marker = ['.-', 'rx', 'go']
-    time_steps = create_time_steps(plot_data[0].shape[0])
-    if delta:
-        future = delta
-    else:
-        future = 0
-
-    plt.title(title)
-    for i, x in enumerate(plot_data):
-        if i:
-            plt.plot(future, plot_data[i], marker[i], markersize=10,
-                     label=labels[i])
-        else:
-            plt.plot(time_steps, plot_data[i].flatten(), marker[i], label=labels[i])
-    plt.legend()
-    plt.xlim([time_steps[0], (future+5)*2])
-    plt.xlabel('Time-Step')
-    plt.show()
-    return plt
-
-
-show_plot([x_train_uni[0], y_train_uni[0]], 0, 'Finance Sample')
-
-
-def baseline(history):
-    return np.mean(history)
-
-
-show_plot([x_train_uni[0], y_train_uni[0], baseline(x_train_uni[0])], 0,
-          'Baseline Prediction Example')
-
-BATCH_SIZE = 256
+#
+#
+# def show_plot(plot_data, delta, title):
+#     labels = ['History', 'True Future', 'Model Prediction']
+#     marker = ['.-', 'rx', 'go']
+#     time_steps = create_time_steps(plot_data[0].shape[0])
+#     if delta:
+#         future = delta
+#     else:
+#         future = 0
+#
+#     plt.title(title)
+#     for i, x in enumerate(plot_data):
+#         if i:
+#             plt.plot(future, plot_data[i], marker[i], markersize=10,
+#                      label=labels[i])
+#         else:
+#             plt.plot(time_steps, plot_data[i].flatten(), marker[i], label=labels[i])
+#     plt.legend()
+#     plt.xlim([time_steps[0], (future+5)*2])
+#     plt.xlabel('Time-Step')
+#     plt.show()
+#     return plt
+#
+#
+# show_plot([x_train_uni[0], y_train_uni[0]], 0, 'Finance Sample')
+#
+#
+# def baseline(history):
+#     return np.mean(history)
+#
+#
+# show_plot([x_train_uni[0], y_train_uni[0], baseline(x_train_uni[0])], 0,
+#           'Baseline Prediction Example')
+#
+BATCH_SIZE = 100
 BUFFER_SIZE = 1000
-
-train_univariate = tf.data.Dataset.from_tensor_slices((x_train_uni, y_train_uni))
-train_univariate = train_univariate.cache().shuffle(BUFFER_SIZE).batch(BATCH_SIZE).repeat()
-
-val_univariate = tf.data.Dataset.from_tensor_slices((x_val_uni, y_val_uni))
-val_univariate = val_univariate.batch(BATCH_SIZE).repeat()
-
-simple_lstm_model = tf.keras.models.Sequential([
-    tf.keras.layers.LSTM(8, input_shape=x_train_uni.shape[-2:]),
-    tf.keras.layers.Dense(1)
-])
-
-simple_lstm_model.compile(optimizer='adam', loss='mae')
-
-for x, y in val_univariate.take(1):
-    print(simple_lstm_model.predict(x).shape)
-
-
+#
+# train_univariate = tf.data.Dataset.from_tensor_slices((x_train_uni, y_train_uni))
+# train_univariate = train_univariate.cache().shuffle(BUFFER_SIZE).batch(BATCH_SIZE).repeat()
+#
+# val_univariate = tf.data.Dataset.from_tensor_slices((x_val_uni, y_val_uni))
+# val_univariate = val_univariate.batch(BATCH_SIZE).repeat()
+#
+# simple_lstm_model = tf.keras.models.Sequential([
+#     tf.keras.layers.LSTM(8, input_shape=x_train_uni.shape[-2:]),
+#     tf.keras.layers.Dense(1)
+# ])
+#
+# simple_lstm_model.compile(optimizer='adam', loss='mae')
+#
+# for x, y in val_univariate.take(1):
+#     print(simple_lstm_model.predict(x).shape)
+#
+#
 EVALUATION_INTERVAL = 200
-EPOCHS = 10
+EPOCHS = 5
+#
+# simple_lstm_model.fit(train_univariate, epochs=EPOCHS,
+#                       steps_per_epoch=EVALUATION_INTERVAL,
+#                       validation_data=val_univariate, validation_steps=50)
+#
+#
+# for x, y in val_univariate.take(3):
+#     plot = show_plot([x[0].numpy(), y[0].numpy(),
+#                       simple_lstm_model.predict(x)[0]], 0, 'Simple LSTM model')
+#     plot.show()
 
-simple_lstm_model.fit(train_univariate, epochs=EPOCHS,
-                      steps_per_epoch=EVALUATION_INTERVAL,
-                      validation_data=val_univariate, validation_steps=50)
+
+print("="*200)
+
+# 'realDate', 'Date', 'Adj_Close', 'Adj_Won', 'Open', 'High', 'Low', 'Volume'
 
 
-for x, y in val_univariate.take(3):
-    plot = show_plot([x[0].numpy(), y[0].numpy(),
-                      simple_lstm_model.predict(x)[0]], 0, 'Simple LSTM model')
-    plot.show()
+finance_df.plot(subplots=True)
+plt.show()
 
-# inputs = np.random.random([32, 10, 8]).astype(np.float32)
-# lstm = tf.keras.layers.LSTM(4)
-#
-# output = lstm(inputs)  # The output has shape `[32, 4]`.
-#
-# lstm = tf.keras.layers.LSTM(4, return_sequences=True, return_state=True)
-#
-# # whole_sequence_output has shape `[32, 10, 4]`.
-# # final_memory_state and final_carry_state both have shape `[32, 4]`.
-# whole_sequence_output, final_memory_state, final_carry_state = lstm(inputs)
+TRAIN_SPLIT = 3000
+dataset = finance_df.values
+tr_data = dataset
+data_mean = dataset.mean(axis=0)
+data_std = dataset.std(axis=0)
 
-# x = np.concatenate((np.array(finance_price), np.array(finance_date)), axis=1) # axis=1, 세로로 합친다
+dataset = (dataset-data_mean)/data_std
 
-# norm_price = min_max_scaling(price)
-#
-# print("price.shape: ", price.shape)
-# print("price[0]: ", price[0])
-# print("norm_price[0]: ", norm_price[0])
-# print("="*100) # 화면상 구분용
+# print(finance_df.head())
 
-# y_data = finance_data.pop('Adj_Close')
-# tr_data = finance_data
 
-# dataset = tf.data.Dataset.from_tensor_slices((tr_data.values, y_data.values))
-# train_ds = dataset.shuffle(len(finance_data)).batch(50)
-# def get_compiled_model():
-#
-#     # model = tf.keras.Sequential()
-#     # model.add(tf.keras.layers.Dense(10, activation='relu'))
-#     # model.add(tf.keras.layers.Dense(10, activation='relu'))
-#     # model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
-#     model = tf.keras.Sequential([
-#         tf.keras.layers.Dense(10, activation='relu'),
-#         tf.keras.layers.Dense(10, activation='relu'),
-#         tf.keras.layers.Dense(1, activation='sigmoid')
-#     ])
-#
-#     model.compile(optimizer='adam',
-#                   loss='binary_crossentropy',
-#                   metrics=['accuracy'])
-#     return model
-#
-#
-# model = get_compiled_model()
-# model.fit(train_ds, epochs=100)
-#
-# def get_compiled_model():
-#
-#     model = tf.keras.Sequential()
-#     model.add(tf.keras.layers.Dense(10, kernel_initializer='uniform', activation='relu', input_shape=(8,)))
-#     model.add(tf.keras.layers.Dense(128, activation='relu'))
-#     # 커널을 랜덤한 직교 행렬로 초기화한 선형 활성화 층:
-#     # model.add(tf.keras.layers.Dense(64, kernel_initializer='orthogonal'))
-#     model.add(tf.keras.layers.Dropout(0.5))
-#     model.add(tf.keras.layers.Dense(256, activation='relu'))
-#     # model.add(tf.keras.layers.BatchNormalization())
-#
-#     model.add(tf.keras.layers.Dense(1, activation='sigmoid', name='out_layer'))
-#
-#     '''
-#     model = tf.keras.Sequential([
-#         tf.keras.layers.Dense(10, activation='relu'),
-#         tf.keras.layers.Dense(10, activation='relu'),
-#         tf.keras.layers.Dense(1, activation='sigmoid')
-#     ])
-#
-#     inputs = keras.Input(shape=(784,), name='digits')
-#     x = layers.Dense(64, activation='relu', name='dense_1')(inputs)
-#     x = layers.Dense(64, activation='relu', name='dense_2')(x)
-#     outputs = layers.Dense(10, activation='softmax', name='predictions')(x)
-#
-#     model.add(tf.keras.layers.Embedding(input_dim=1000, output_dim=256))
-#     model.add(tf.keras.layers.LSTM(128))
-#
-#     model.compile(optimizer=tf.keras.optimizers.RMSprop(0.01),
-#                   loss=tf.keras.losses.binary_crossentropy,
-#                   metrics=[tf.keras.metrics.binary_crossentropy])
-#
-#     model.compile(optimizer='adam',
-#                   loss='binary_crossentropy',
-#                   metrics=['accuracy'])
-#     '''
-#
-#     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.001, beta_2=0.999, amsgrad=False),
-#                   loss='binary_crossentropy',
-#                   metrics=['accuracy'])
-#
-#     return model
+def multivariate_data(dataset, target, start_index, end_index, history_size,
+                      target_size, step):
+    data = []
+    labels = []
+
+    start_index = start_index + history_size
+    if end_index is None:
+        end_index = len(dataset) - target_size
+
+    for i in range(start_index, end_index):
+        indices = range(i-history_size, i, step)
+        data.append(dataset[indices])
+
+        labels.append(target[i:i+target_size])
+
+    return np.array(data), np.array(labels)
+
+
+history_size = 20
+target_size = 1
+STEP = 1
+
+x_train_multi, y_train_multi = multivariate_data(dataset, dataset[:, 0], 0,
+                                                 TRAIN_SPLIT, history_size,
+                                                 target_size, STEP)
+x_val_multi, y_val_multi = multivariate_data(dataset, dataset[:, 0],
+                                             TRAIN_SPLIT, None, history_size,
+                                             target_size, STEP)
+
+
+print('x_train_multi past history : {}'.format(x_train_multi.shape))
+print('\n y_train_multi Target predict : {}'.format(y_train_multi.shape))
+print('x_val_multi past history : {}'.format(x_val_multi.shape))
+print('\n y_val_multi Target predict : {}'.format(y_val_multi.shape))
+
+
+train_data_multi = tf.data.Dataset.from_tensor_slices((x_train_multi, y_train_multi))
+train_data_multi = train_data_multi.cache().batch(BATCH_SIZE).repeat()
+
+val_data_multi = tf.data.Dataset.from_tensor_slices((x_val_multi, y_val_multi))
+val_data_multi = val_data_multi.batch(BATCH_SIZE).repeat()
+
+
+def multi_step_plot(history, true_future, prediction):
+    plt.figure(figsize=(12, 6))
+    num_in = create_time_steps(len(history))
+    num_out = len(true_future)
+
+    plt.plot(num_in, np.array(history[:, 1]), label='History')
+    plt.plot(np.arange(num_out)/STEP, np.array(true_future), 'bo',
+             label='True Future')
+    if prediction.any():
+        plt.plot(np.arange(num_out)/STEP, np.array(prediction), 'ro',
+                 label='Predicted Future')
+    plt.legend(loc='upper left')
+    plt.show()
+
+
+for x, y in train_data_multi.take(1):
+    multi_step_plot(x[0], y[0], np.array([0]))
+
+
+def kcp_Finance_RNNModel():
+
+    kcp_fn_model = tf.keras.models.Sequential()
+    kcp_fn_model.add(tf.keras.layers.GRU(64, return_sequences=True, input_shape=x_train_multi.shape[-2:]))
+    kcp_fn_model.add(tf.keras.layers.GRU(32, activation='relu'))
+    kcp_fn_model.add(tf.keras.layers.Dense(126, activation='relu'))
+    kcp_fn_model.add(tf.keras.layers.Dropout(0.5))
+    kcp_fn_model.add(tf.keras.layers.Dense(64, kernel_initializer='orthogonal'))
+    kcp_fn_model.add(tf.keras.layers.Dropout(0.5))
+    kcp_fn_model.add(tf.keras.layers.Dense(32, activation='relu'))
+    kcp_fn_model.add(tf.keras.layers.Dense(1))
+    kcp_fn_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), loss='mae')
+
+    kcp_fn_model.summary()
+    tf.keras.utils.plot_model(kcp_fn_model, 'kcp_finance_RNNModel.png')
+    tf.keras.utils.plot_model(kcp_fn_model, 'kcp_finance_RNNModel_with_shape_info.png', show_shapes=True)
+
+    return kcp_fn_model
+
+
+kcp_model = kcp_Finance_RNNModel()
+
+for x, y in val_data_multi.take(1):
+    print(kcp_model.predict(x).shape)
+
+
+multi_step_history = kcp_model.fit(train_data_multi, epochs=EPOCHS,
+                                          steps_per_epoch=EVALUATION_INTERVAL,
+                                          validation_data=val_data_multi,
+                                          validation_steps=15)
+
+
+def plot_train_history(history, title):
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+
+    epochs = range(len(loss))
+
+    plt.figure()
+
+    plt.plot(epochs, loss, 'b', label='Training loss')
+    plt.plot(epochs, val_loss, 'r', label='Validation loss')
+    plt.title(title)
+    plt.legend()
+
+    plt.show()
+
+
+plot_train_history(multi_step_history, 'Multi-Step Training and validation loss')
+
+
+for x, y in val_data_multi.take(5):
+    multi_step_plot(x[0], y[0], kcp_model.predict(x)[0])
