@@ -1,9 +1,9 @@
-import datetime as dt
 import pandas as pd
 from pandas import DataFrame, Series
 import matplotlib.pyplot as plt
 import urllib
 import time
+import datetime
 from dateutil.parser import parse
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
@@ -249,7 +249,7 @@ BUFFER_SIZE = 1000
 #
 #
 EVALUATION_INTERVAL = 200
-EPOCHS = 5
+EPOCHS = 1
 #
 # simple_lstm_model.fit(train_univariate, epochs=EPOCHS,
 #                       steps_per_epoch=EVALUATION_INTERVAL,
@@ -349,9 +349,9 @@ def kcp_Finance_RNNModel():
     kcp_fn_model.add(tf.keras.layers.GRU(64, return_sequences=True, input_shape=x_train_multi.shape[-2:]))
     kcp_fn_model.add(tf.keras.layers.GRU(32, activation='relu'))
     kcp_fn_model.add(tf.keras.layers.Dense(126, activation='relu'))
-    kcp_fn_model.add(tf.keras.layers.Dropout(0.5))
+    kcp_fn_model.add(tf.keras.layers.Dropout(0.2))
     kcp_fn_model.add(tf.keras.layers.Dense(64, kernel_initializer='orthogonal'))
-    kcp_fn_model.add(tf.keras.layers.Dropout(0.5))
+    kcp_fn_model.add(tf.keras.layers.Dropout(0.3))
     kcp_fn_model.add(tf.keras.layers.Dense(32, activation='relu'))
     kcp_fn_model.add(tf.keras.layers.Dense(1))
     kcp_fn_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), loss='mae')
@@ -368,11 +368,17 @@ kcp_model = kcp_Finance_RNNModel()
 for x, y in val_data_multi.take(1):
     print(kcp_model.predict(x).shape)
 
+log_dir="logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 multi_step_history = kcp_model.fit(train_data_multi, epochs=EPOCHS,
                                           steps_per_epoch=EVALUATION_INTERVAL,
                                           validation_data=val_data_multi,
-                                          validation_steps=15)
+                                          validation_steps=50,
+                                          callbacks=[tensorboard_callback])
+
+
+kcp_model.save('kcp_finance_model.h5', save_format='h5')
 
 
 def plot_train_history(history, title):
@@ -391,8 +397,12 @@ def plot_train_history(history, title):
     plt.show()
 
 
-plot_train_history(multi_step_history, 'Multi-Step Training and validation loss')
+plot_train_history(multi_step_history, 'KCP Finance Training and validation loss')
 
 
 for x, y in val_data_multi.take(5):
-    multi_step_plot(x[0], y[0], kcp_model.predict(x)[0])
+    multi_step_plot(x[0], y[0], kcp_model1.predict(x)[0])
+
+
+
+
